@@ -20,7 +20,7 @@ class Restaurant:
 def read_data(order_path, res_path):
     with open(order_path) as order_file:
         lines = order_file.readlines()
-        data = [[int(i) for i in line.split()] for line in lines[1:]]
+        data = [[int(i) for i in line.split()] for line in lines[1:6]]
         orders = [Order(line[0], line[1], line[2], line[3], line[4]) for line in data if line]
     with open(res_path) as res_file:
         lines = res_file.readlines()
