@@ -189,15 +189,25 @@ model.setParam('TimeLimit', 100)
 model.optimize()
 model.write(r'C:\Users\32684\Desktop\model.lp')
 
-for i in set_N:
-    for j in set_N:
-        for k in set_K:
+path = [[] for k in set_K]
+arrive_time = [[] for k in set_K]
+for k in set_K:
+    for i in set_N:
+        for j in set_N:
             if X[i, j, k].X > 0.99:
-                print(i, j, k)
+                path[k].append(i)
+                arrive_time[k].append(L[i, k].X)
+    arrive_time[k], path[k] = zip(*sorted(zip(arrive_time[k], path[k])))
 
-
-
-
+with open(r'C:\Users\32684\Desktop\solver_solution.txt', 'w') as f:
+    for k in set_K:
+        print('第%d个骑手的路线：\n' % k, file=f)
+        print(path[k], file=f)
+    print('\n', file=f)
+    print('行驶成本：%f \n' % obj1.getValue(), file=f)
+    print('延迟成本：%f \n' % obj2.getValue(), file=f)
+    print('总成本：%f \n' % obj.getValue(), file=f)
+f.close()
 
 
 
