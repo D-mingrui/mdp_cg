@@ -5,7 +5,6 @@ from run_data import *
 [orders, restaurants] = read_data(r'C:\Users\32684\Desktop\mdp_data\test\order1.txt',
                                   r'C:\Users\32684\Desktop\mdp_data\test\restaurant1.txt')
 order_num = len(orders)     # 订单的数量
-service_time = 2    # 每个订单顾客节点的服务时间
 rider_num = 2   # 可用的骑手数量
 max_order = 6   # 每个骑手最多配送的订单数量
 speed = 240     # 骑手行驶的速度 米/分钟
@@ -17,6 +16,10 @@ set_N = [i for i in range(2 * order_num + 2)]   # 集合N
 set_K = [k for k in range(rider_num)]
 start_node = 0
 dest_node = 2 * order_num + 1
+service_time = [0]    # 每个订单顾客节点的服务时间
+for j in set_N[1:-1]:
+    service_time.append(2)
+service_time.append(0)
 
 s_i = {}    # 餐馆i的单位延迟时间惩罚成本
 l_i = {}    # 餐馆i的配送时效要求
@@ -161,7 +164,7 @@ for i in set_P:
 # c14
 for i in set_P:
     for k in set_K:
-        model.addConstr(L[i, k] <= L[i + order_num, k] - service_time, 'c14')
+        model.addConstr(L[i, k] <= L[i + order_num, k] - service_time[i + order_num], 'c14')
 
 # c15
 for i in set_N:
@@ -183,7 +186,7 @@ for i in set_N:
 for i in set_N:
     for j in set_N:
         for k in set_K:
-            model.addConstr(L[j, k] >= L[i, k] + t_i_j[i, j] + big_M * (X[i, j, k] - 1) + service_time, 'c22')
+            model.addConstr(L[j, k] >= L[i, k] + t_i_j[i, j] + big_M * (X[i, j, k] - 1) + service_time[j], 'c22')
 
 model.setParam('TimeLimit', 100)
 model.optimize()
