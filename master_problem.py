@@ -21,10 +21,10 @@ class MDP:
         :param ride_cost: 骑手单位距离的骑行成本
         :param service_time: 在顾客节点的服务时间列表
         """
-        order_num = len(orders)
-        self.set_P = [i for i in range(1, order_num + 1)]  # 集合P
-        self.set_D = [i for i in range(order_num + 1, 2 * order_num + 1)]  # 集合D
-        self.set_N = [i for i in range(2 * order_num + 2)]  # 集合N
+        self.order_num = len(orders)
+        self.set_P = [i for i in range(1, self.order_num + 1)]  # 集合P
+        self.set_D = [i for i in range(self.order_num + 1, 2 * self.order_num + 1)]  # 集合D
+        self.set_N = [i for i in range(2 * self.order_num + 2)]  # 集合N
         self.set_K = [k for k in range(riders)]
         self.paths_orders = None  # 各路径对应的订单列表
         self.paths_cost = None  # 各路径的成本
@@ -46,13 +46,13 @@ class MDP:
         self.service_time = service_time  # 在顾客节点的服务时间
         # 配送网络中的所有节点
         self.nodes = [Node(0, depot[0], depot[1])]
-        for i in self.set_P:
-            self.nodes.append(Node(i, restaurants[orders[i].restaurant - 1].cor_x,
+        for i in range(len(self.set_P)):
+            self.nodes.append(Node(i + 1, restaurants[orders[i].restaurant - 1].cor_x,
                                    restaurants[orders[i].restaurant - 1].cor_y,
                                    delivery_time=restaurants[orders[i].restaurant - 1].time,
                                    penalty=restaurants[orders[i].restaurant - 1].penalty))
-        for i in self.set_P:
-            self.nodes.append(Node(i + len(orders), orders[i].cor_x,
+        for i in range(len(self.set_P)):
+            self.nodes.append(Node(i + 1 + len(orders), orders[i].cor_x,
                                    orders[i].cor_y,
                                    restaurant=orders[i].restaurant,
                                    ready_time=orders[i].ready_time))
@@ -115,7 +115,7 @@ class MDP:
                 riders_paths[k].append(order + 1)
                 riders_paths[k].append(order + 1 + len(self.orders))
         for k in range(self.riders):
-            riders_paths[k].append(self.node_num)
+            riders_paths[k].append(0)
         return riders_paths, riders_orders
 
     def init_model(self):
@@ -124,7 +124,9 @@ class MDP:
         """
         [self.paths, self.paths_orders] = self.initial_paths()
         self.paths_time = [self.cal_path_time(path) for path in self.paths]
-        self.paths_set = set(self.paths)
+        self.paths_set = set()
+        for path in self.paths:
+            self.paths_set.add(tuple(path))
         self.paths_cost = [self.cal_path_cost(self.paths[r], self.paths_time[r]) for r in range(len(self.paths))]
 
         model = Model('MDP')
@@ -140,12 +142,12 @@ class MDP:
 
         # 给a_i_r赋值
         a_i_r = {}
-        for i in set_P:
+        for i in range(1, self.order_num + 1):
             for r in range(len(self.paths)):
                 a_i_r[i, r] = 0  # 初始化
         for r in range(len(self.paths)):
             for i in self.paths_orders[r]:
-                a_i_r[i, r] = 1  # 赋值
+                a_i_r[i + 1, r] = 1  # 赋值
 
         # constraint 30
         for i in self.set_P:
@@ -191,7 +193,9 @@ class MDP:
         self.paths_set.add(path_t)
 
         coeffs = np.zeros(len(self.set_P) + 1)
-        coeffs[path[1: -1]] = 1
+        for i in path[1: -1]:
+            if i <= self.order_num:
+                coeffs[i] = 1
         coeffs[-1] = 1
         cost = reduced_cost + self.espptwcpd.duals[-1]
         self.model.addVar(obj=cost, name=f"v{len(self.paths) - 1}",

@@ -1,5 +1,6 @@
 from collections import deque
 from functools import lru_cache
+from copy import deepcopy
 
 
 class Node:
@@ -132,9 +133,9 @@ class ESPPTWCPD:
         # 计算下一个节点的时间
         from_node = from_label.node
         if to_node.num > self.orders_num:   # 下一个节点是顾客节点
-            time = from_node.time + self.travel_time[from_node.num, to_node.num] + self.service_time[to_node.num]
+            time = from_label.time + self.travel_time[from_node.num, to_node.num] + self.service_time[to_node.num]
         else:   # 下一个节点是商家节点
-            time = max(from_node.time + self.travel_time[from_node.num, to_node.num] + self.service_time[to_node.num],
+            time = max(from_label.time + self.travel_time[from_node.num, to_node.num] + self.service_time[to_node.num],
                        self.ready_time[to_node.num - 1])
 
         # 计算下一个节点的成本
@@ -150,8 +151,12 @@ class ESPPTWCPD:
 
         # 计算下一个节点的W
         # 计算下一个节点的U
-        W = from_label.W    # 已经开始服务但尚未完成的订单集合
-        U = from_label.U    # 不可访问的订单
+        W = set()    # 已经开始服务但尚未完成的订单集合
+        for node in list(from_label.W):
+            W.add(node)
+        U = set()    # 不可访问的订单
+        for node in list(from_label.U):
+            U.add(node)
         if to_node.num > self.orders_num:  # 如果下一个节点是顾客节点
             W.remove(self.nodes[to_node.num - self.orders_num])
         else:  # 如果下一个节点是商家节点
