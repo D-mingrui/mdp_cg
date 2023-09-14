@@ -171,6 +171,8 @@ class MDP:
         """
         self.espptwcpd = ESPPTWCPD(self.capacity, self.nodes, self.dist_cost, self.travel_time, self.service_time)
         self.model.optimize()
+        iter = 1
+        print(iter)
         while self.model.status == GRB.OPTIMAL:
             duals = [constr.Pi for constr in self.model.getConstrs()]
             self.espptwcpd.duals = duals
@@ -183,6 +185,8 @@ class MDP:
                 path = [node.num for node in label.path]
                 self.add_path(path, label.cost)
             self.model.optimize()
+            iter += 1
+            print(iter)
 
     def add_path(self, path, reduced_cost):
         path_t = tuple(path)

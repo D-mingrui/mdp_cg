@@ -1,5 +1,6 @@
 from gurobipy import *
 from run_data import *
+from draw_picture import Draw
 
 
 [orders, restaurants] = read_data(r'C:\Users\32684\Desktop\mdp_data\test\order1.txt',
@@ -16,10 +17,11 @@ set_N = [i for i in range(2 * order_num + 2)]   # 集合N
 set_K = [k for k in range(rider_num)]
 start_node = 0
 dest_node = 2 * order_num + 1
-service_time = [0]    # 每个订单顾客节点的服务时间
-for j in set_N[1:-1]:
-    service_time.append(2)
-service_time.append(0)
+# service_time = [2]    # 每个订单顾客节点的服务时间
+# for j in set_N[1:-1]:
+#     service_time.append(2)
+# service_time.append(0)
+service_time = 0
 
 s_i = {}    # 餐馆i的单位延迟时间惩罚成本
 l_i = {}    # 餐馆i的配送时效要求
@@ -164,12 +166,17 @@ for i in set_P:
 # c14
 for i in set_P:
     for k in set_K:
-        model.addConstr(L[i, k] <= L[i + order_num, k] - service_time[i + order_num], 'c14')
+        # model.addConstr(L[i, k] <= L[i + order_num, k] - service_time[i + order_num], 'c14')
+        model.addConstr(L[i, k] <= L[i + order_num, k] - service_time, 'c14')
 
 # c15
+for k in set_K:
+    model.addConstr(L[start_node, k] <= L[dest_node, k] - service_time, 'c15')
+
+# c16
 for i in set_N:
     for k in set_K:
-        model.addConstr(Q[i, k] <= max_order * 2, 'c15')
+        model.addConstr(Q[i, k] <= max_order * 2, 'c16')
 
 # c18
 for i in set_P:
@@ -186,9 +193,10 @@ for i in set_N:
 for i in set_N:
     for j in set_N:
         for k in set_K:
-            model.addConstr(L[j, k] >= L[i, k] + t_i_j[i, j] + big_M * (X[i, j, k] - 1) + service_time[j], 'c22')
+            # model.addConstr(L[j, k] >= L[i, k] + t_i_j[i, j] + big_M * (X[i, j, k] - 1) + service_time[j], 'c22')
+            model.addConstr(L[j, k] >= L[i, k] + t_i_j[i, j] + big_M * (X[i, j, k] - 1) + service_time, 'c22')
 
-model.setParam('TimeLimit', 100)
+model.setParam('TimeLimit', 1000)
 model.optimize()
 model.write(r'C:\Users\32684\Desktop\model.lp')
 
@@ -200,6 +208,8 @@ for k in set_K:
             if X[i, j, k].X > 0.99:
                 path[k].append(i)
                 arrive_time[k].append(L[i, k].X)
+    path[k].append(dest_node)
+    arrive_time[k].append(L[dest_node, k].X)
     arrive_time[k], path[k] = zip(*sorted(zip(arrive_time[k], path[k])))
 
 with open(r'C:\Users\32684\Desktop\solver_solution.txt', 'w') as f:
@@ -212,7 +222,7 @@ with open(r'C:\Users\32684\Desktop\solver_solution.txt', 'w') as f:
     print('总成本：%f \n' % obj.getValue(), file=f)
 f.close()
 
-
-
+pic = Draw(node_cor_x, node_cor_y, depot)
+pic.construct_node_network(path)
 
 
