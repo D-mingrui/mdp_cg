@@ -57,6 +57,7 @@ class MDP:
                                    restaurant=orders[i].restaurant,
                                    ready_time=orders[i].ready_time))
         self.nodes.append(Node(self.order_num * 2 + 1, depot[0], depot[1]))
+        self.nodes[0].q_j = 0  # 起点节点不计入访问次数
         self.nodes[-1].q_j = 0  # 终点节点不计入访问次数
 
     def cal_path_time(self, path):

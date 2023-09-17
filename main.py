@@ -8,7 +8,7 @@ if __name__ == '__main__':
     [orders, restaurants] = read_data(r'C:\Users\32684\Desktop\mdp_data\test\order1.txt',
                                       r'C:\Users\32684\Desktop\mdp_data\test\restaurant1.txt')
     order_num = len(orders)  # 订单的数量
-    rider_num = 2  # 可用的骑手数量
+    rider_num = 1  # 可用的骑手数量
     max_order = 5  # 每个骑手最多配送的订单数量
     speed = 240  # 骑手行驶的速度 米/分钟
     f_cost = 1  # 骑手行驶的单位距离成本
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # 各节点的取货情况
     q_j = cal_q_j(set_P, set_D)
 
-    mdp = MDP(rider_num, max_order * 2, orders, restaurants, depot, d_i_j, dc_i_j, t_i_j, f_cost, service_time)
+    mdp = MDP(rider_num, max_order, orders, restaurants, depot, d_i_j, dc_i_j, t_i_j, f_cost, service_time)
     mdp.init_model()
     obj, paths = mdp.solve()
     print(obj)

@@ -129,10 +129,13 @@ class ESPPTWCPD:
         return to_labels
 
     def extended_label(self, from_label: Label, to_node: Node):
-        # 计算下一个节点的订单量
-        load = from_label.load + to_node.q_j
-        if load > self.capacity:
-            return
+        # 如果下一个节点是商家节点，计算下一个节点的订单量
+        if 1 <= to_node.num <= self.orders_num:
+            load = from_label.load + to_node.q_j
+            if load > self.capacity:
+                return
+        else:
+            load = from_label.load
 
         # 计算下一个节点的时间
         from_node = from_label.node
