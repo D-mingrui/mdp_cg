@@ -34,7 +34,7 @@ def cal_d_t_dc(orders, restaurants, set_P, set_N, depot, f_cost, speed):
     d_i_j = {}  # 记录各节点之间的距离
     t_i_j = {}  # 记录各节点之间的行驶时间
     dc_i_j = {}  # 记录各节点之间的行驶成本
-    big_M = 100000
+    big_M = 99999999
     for i in set_N:
         for j in set_N:
             d_i_j[i, j] = abs(node_cor_x[i] - node_cor_x[j]) + abs(node_cor_y[i] - node_cor_y[j])

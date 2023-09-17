@@ -56,6 +56,8 @@ class MDP:
                                    orders[i].cor_y,
                                    restaurant=orders[i].restaurant,
                                    ready_time=orders[i].ready_time))
+        self.nodes.append(Node(self.order_num * 2 + 1, depot[0], depot[1]))
+        self.nodes[-1].q_j = 0  # 终点节点不计入访问次数
 
     def cal_path_time(self, path):
         """
@@ -177,16 +179,16 @@ class MDP:
             duals = [constr.Pi for constr in self.model.getConstrs()]
             self.espptwcpd.duals = duals
             labels = self.espptwcpd.solve()
-            if labels and labels[0].cost >= 0.001:
+            if labels and labels[0].cost - self.espptwcpd.duals[-1] > -0.001:
                 return [self.model.getObjective().getValue(), self.used_path()]
             for label in labels:
-                if label.cost >= 0:
+                if label.cost - self.espptwcpd.duals[-1] > -0.001:
                     break
                 path = [node.num for node in label.path]
                 self.add_path(path, label.cost)
             self.model.optimize()
             iter += 1
-            print(iter)
+            print(iter, labels[0].cost - self.espptwcpd.duals[-1])
 
     def add_path(self, path, reduced_cost):
         path_t = tuple(path)
@@ -199,9 +201,12 @@ class MDP:
         coeffs = np.zeros(len(self.set_P) + 1)
         for i in path[1: -1]:
             if i <= self.order_num:
-                coeffs[i] = 1
+                coeffs[i - 1] = 1
         coeffs[-1] = 1
-        cost = reduced_cost + self.espptwcpd.duals[-1]
+        cost = reduced_cost
+        for i in path[1: -1]:
+            if 1 <= i <= self.order_num:
+                cost += self.espptwcpd.duals[i - 1]
         self.model.addVar(obj=cost, name=f"v{len(self.paths) - 1}",
                           column=Column(coeffs, self.model.getConstrs()))
 

@@ -66,7 +66,7 @@ class Label:
 
 class ESPPTWCPD:
     """
-    nodes是Node实例列表，共有订单数乘2加1个元素；
+    nodes是Node实例列表，共有订单数乘2加2个元素；
     capacity是每个骑手最多配送的订单数
     """
     def __init__(self, capacity, nodes, dc_i_j: dict, t_i_j: dict, service_time):
@@ -94,14 +94,14 @@ class ESPPTWCPD:
             to_labels = self.feasible_label_from(from_label)
             for to_label in to_labels:
                 to_node = to_label.node
-                if to_node is not self.depot_node:
+                if to_node is not self.nodes[-1]:
                     if to_label.is_dominated():
                         continue
                     to_label.filter_dominated()
                     to_be_extended.append(to_label)
                 to_node.labels.append(to_label)
 
-        return sorted(self.depot_node.labels, key=lambda x: x.cost)
+        return sorted(self.nodes[-1].labels, key=lambda x: x.cost)
 
     def depot_label(self):
         # U = [node for node in self.nodes[(self.orders_num + 1):]]
@@ -111,16 +111,20 @@ class ESPPTWCPD:
 
     def feasible_label_from(self, from_label: Label):
         to_labels = []
+        # 下一个节点是商家节点
         for to_node in (set(self.nodes[1: self.orders_num + 1]) - from_label.U):
             to_label = self.extended_label(from_label, to_node)
             if not to_label:
                 from_label.U.add(to_node)
             else:
                 to_labels.append(to_label)
+        # 下一个节点是顾客节点
         for unfinished_node in from_label.W:
             to_label = self.extended_label(from_label, self.nodes[unfinished_node.num + self.orders_num])
             to_labels.append(to_label)
-        to_labels.append(self.extended_label(from_label, self.depot_node))
+        # 下一个节点是终点
+        if not from_label.W and from_label.node.num != 0:
+            to_labels.append(self.extended_label(from_label, self.nodes[-1]))
 
         return to_labels
 
@@ -132,7 +136,7 @@ class ESPPTWCPD:
 
         # 计算下一个节点的时间
         from_node = from_label.node
-        if to_node.num > self.orders_num:   # 下一个节点是顾客节点
+        if to_node.num > self.orders_num:   # 下一个节点是顾客节点或终点
             time = from_label.time + self.travel_time[from_node.num, to_node.num] + self.service_time[to_node.num]
         else:   # 下一个节点是商家节点
             time = max(from_label.time + self.travel_time[from_node.num, to_node.num] + self.service_time[to_node.num],
@@ -142,12 +146,12 @@ class ESPPTWCPD:
         ride_cost = self.dist_cost[from_node.num, to_node.num]
         delay_cost = 0
         dual_cost = 0
-        if to_node.num > self.orders_num:   # 下一个节点是顾客节点
+        if self.orders_num < to_node.num <= self.orders_num * 2:   # 下一个节点是顾客节点
             delay_time = max(0, time - to_node.ready_time - self.delivery_time[to_node.restaurant - 1])
             delay_cost = delay_time * self.penalty[to_node.restaurant - 1]
-        if 1 <= from_node.num <= self.orders_num:     # 下一个节点是商家节点
+        if 1 <= from_node.num <= self.orders_num:     # 上一个节点是商家节点
             dual_cost += self.duals[from_node.num - 1]
-        cost = ride_cost + delay_cost - dual_cost
+        cost = from_label.cost + ride_cost + delay_cost - dual_cost
 
         # 计算下一个节点的W
         # 计算下一个节点的U
@@ -157,10 +161,13 @@ class ESPPTWCPD:
         U = set()    # 不可访问的订单
         for node in list(from_label.U):
             U.add(node)
-        if to_node.num > self.orders_num:  # 如果下一个节点是顾客节点
+        if self.orders_num < to_node.num <= self.orders_num * 2:  # 如果下一个节点是顾客节点
             W.remove(self.nodes[to_node.num - self.orders_num])
-        else:  # 如果下一个节点是商家节点
+            U.add(to_node)
+        elif 0 < to_node.num <= self.orders_num:  # 如果下一个节点是商家节点
             W.add(to_node)
+            U.add(to_node)
+        else:   # 如果下一个节点是终点
             U.add(to_node)
 
         return Label(to_node, cost, load, time, U, W, from_label)

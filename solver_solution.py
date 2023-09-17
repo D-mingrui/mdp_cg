@@ -3,11 +3,11 @@ from run_data import *
 from draw_picture import Draw
 
 
-[orders, restaurants] = read_data(r'C:\Users\32684\Desktop\mdp_data\test\order2.txt',
-                                  r'C:\Users\32684\Desktop\mdp_data\test\restaurant2.txt')
+[orders, restaurants] = read_data(r'C:\Users\32684\Desktop\mdp_data\test\order1.txt',
+                                  r'C:\Users\32684\Desktop\mdp_data\test\restaurant1.txt')
 order_num = len(orders)     # 订单的数量
 rider_num = 2   # 可用的骑手数量
-max_order = 6   # 每个骑手最多配送的订单数量
+max_order = 5   # 每个骑手最多配送的订单数量
 speed = 240     # 骑手行驶的速度 米/分钟
 f_cost = 1      # 骑手行驶的单位距离成本
 
