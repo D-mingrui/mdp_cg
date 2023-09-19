@@ -10,7 +10,7 @@ if __name__ == '__main__':
     order_num = len(orders)  # 订单的数量
     rider_num = 1  # 可用的骑手数量
     max_order = 5  # 每个骑手最多配送的订单数量
-    speed = 240  # 骑手行驶的速度 米/分钟
+    speed = 400  # 骑手行驶的速度 米/分钟
     f_cost = 1  # 骑手行驶的单位距离成本
     depot = [1000, 1000]  # 配送中心的坐标
 

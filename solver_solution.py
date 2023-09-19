@@ -6,10 +6,11 @@ from draw_picture import Draw
 [orders, restaurants] = read_data(r'C:\Users\32684\Desktop\mdp_data\test\order1.txt',
                                   r'C:\Users\32684\Desktop\mdp_data\test\restaurant1.txt')
 order_num = len(orders)     # 订单的数量
-rider_num = 1   # 可用的骑手数量
+rider_num = 2   # 可用的骑手数量
 max_order = 5   # 每个骑手最多配送的订单数量
-speed = 240     # 骑手行驶的速度 米/分钟
+speed = 400     # 骑手行驶的速度 米/分钟
 f_cost = 1      # 骑手行驶的单位距离成本
+tolerance_time = 50     # 最晚配送时间
 
 set_P = [i for i in range(1, order_num + 1)]    # 集合P
 set_D = [i for i in range(order_num + 1, 2 * order_num + 1)]    # 集合D
@@ -30,8 +31,8 @@ depot = [1000, 1000]    # 配送中心的坐标
 node_cor_x = {}     # 记录所有节点的横坐标
 node_cor_y = {}     # 记录所有节点的纵坐标
 node_cor_x[0] = depot[0]
-node_cor_x[2 * order_num + 1] = depot[1]
-node_cor_y[0] = depot[0]
+node_cor_x[2 * order_num + 1] = depot[0]
+node_cor_y[0] = depot[1]
 node_cor_y[2 * order_num + 1] = depot[1]
 big_M = 10000
 
@@ -163,6 +164,11 @@ for i in set_P:
     for k in set_K:
         model.addConstr(L[i, k] >= B_i[i], 'c13')
 
+# c13--
+for i in set_P:
+    for k in set_K:
+        model.addConstr(L[i + order_num, k] <= l_i[i] + tolerance_time + B_i[i], 'c13--')
+
 # c14
 for i in set_P:
     for k in set_K:
@@ -192,7 +198,6 @@ for i in set_N:
 for i in set_N:
     for j in set_N:
         for k in set_K:
-            # model.addConstr(L[j, k] >= L[i, k] + t_i_j[i, j] + big_M * (X[i, j, k] - 1) + service_time[j], 'c22')
             model.addConstr(L[j, k] >= L[i, k] + t_i_j[i, j] + big_M * (X[i, j, k] - 1) + service_time, 'c22')
 
 # model.setParam('TimeLimit', 200)

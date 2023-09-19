@@ -178,6 +178,7 @@ class MDP:
         print(iter)
         while self.model.status == GRB.OPTIMAL:
             duals = [constr.Pi for constr in self.model.getConstrs()]
+            # duals = [100000 for constr in self.model.getConstrs()]
             self.espptwcpd.duals = duals
             labels = self.espptwcpd.solve()
             if labels and labels[0].cost - self.espptwcpd.duals[-1] > -0.001:

@@ -86,8 +86,8 @@ class ESPPTWCPD:
         for node in self.nodes:
             node.labels = []
         to_be_extended = deque([self.depot_label()])
-        while to_be_extended:
-        # while to_be_extended and len(self.nodes[-1].labels) < 200:
+        # while to_be_extended:
+        while to_be_extended and len(self.nodes[-1].labels) < 200:
             print(len(self.nodes[-1].labels))
             from_label = to_be_extended.popleft()
             if from_label.dominated:
