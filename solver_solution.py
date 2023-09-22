@@ -1,19 +1,20 @@
 from gurobipy import *
 from new_run_data import *
 from draw_picture import Draw
+import time
 
 
 origin_data_path = r'D:\资料\赵秋红导师组\本科毕设\文献\外卖配送\Li and Lim pdp_100\lc101.txt'
-depot_path = r'C:\Users\32684\Desktop\mdp_data\LL_dataset\lc_101_depot_100.txt'
-pickup_path = r'C:\Users\32684\Desktop\mdp_data\LL_dataset\lc_101_pickup_100.txt'
-delivery_path = r'C:\Users\32684\Desktop\mdp_data\LL_dataset\lc_101_delivery_100.txt'
+depot_path = r'C:\Users\32684\Desktop\mdp_data\LL_dataset\50_lc_101_depot.txt'
+pickup_path = r'C:\Users\32684\Desktop\mdp_data\LL_dataset\50_lc_101_pickup.txt'
+delivery_path = r'C:\Users\32684\Desktop\mdp_data\LL_dataset\50_lc_101_delivery.txt'
 
 # [depot_node, pickup_nodes, delivery_nodes] = generate_read_data(origin_data_path)
 [depot_node, pickup_nodes, delivery_nodes] = read_data(depot_path, pickup_path, delivery_path)
 order_num = len(pickup_nodes)     # 订单的数量
-rider_num = 15   # 可用的骑手数量
+rider_num = 8   # 可用的骑手数量
 max_order = 10   # 每个骑手最多配送的订单数量
-speed = 1     # 骑手行驶的速度 米/分钟
+speed = 2     # 骑手行驶的速度 米/分钟
 f_cost = 1      # 骑手行驶的单位距离成本
 
 
@@ -73,6 +74,8 @@ for i in set_P:
 for i in set_D:
     q_j.append(1)
 q_j.append(0)
+
+start_time = time.time()
 
 model = Model('origin_model')
 
@@ -217,6 +220,9 @@ for i in set_N:
 # model.setParam('TimeLimit', 200)
 model.optimize()
 model.write(r'C:\Users\32684\Desktop\model.lp')
+
+end_time = time.time()
+print('求解时间：%f' % (end_time - start_time))
 
 path = [[] for k in set_K]
 arrive_time = [[] for k in set_K]

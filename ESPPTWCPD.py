@@ -3,18 +3,6 @@ from functools import lru_cache
 from copy import deepcopy
 
 
-class Node:
-    def __init__(self, node_num, cor_x, cor_y, restaurant=None, ready_time=None, delivery_time=None, penalty=None):
-        self.num = node_num
-        self.q_j = 1
-        self.cor_x = cor_x
-        self.cor_y = cor_y
-        self.restaurant = restaurant
-        self.ready_time = ready_time
-        self.delivery_time = delivery_time
-        self.penalty = penalty
-
-
 class Label:
     def __init__(self, node, cost, order_num, time, unreachable_orders: set, current_orders: set, prev=None):
         self.node = node
@@ -75,12 +63,17 @@ class ESPPTWCPD:
         self.orders_num = int((len(nodes) - 1) / 2)
         self.duals = []
         self.depot_node = nodes[0]
-        self.ready_time = [node.ready_time for node in self.nodes[(self.orders_num + 1):]]
-        self.delivery_time = [node.delivery_time for node in self.nodes[1: (self.orders_num + 1)]]
-        self.penalty = [node.penalty for node in self.nodes[1: (self.orders_num + 1)]]
+        self.A_i = [node.early_time for node in self.nodes[1: (self.orders_num + 1)]]
+        self.B_i = [node.late_time for node in self.nodes[1: (self.orders_num + 1)]]
+        self.E_i = [node.early_time for node in self.nodes[(self.orders_num + 1): (2 * self.orders_num + 1)]]
+        self.F_i_hard = [node.late_time for node in self.nodes[(self.orders_num + 1): (2 * self.orders_num + 1)]]
+        self.F_i_soft = [node.cost_time for node in self.nodes[(self.orders_num + 1): (2 * self.orders_num + 1)]]
+        self.penalty = [node.penalty for node in self.nodes[(self.orders_num + 1): (2 * self.orders_num + 1)]]
+        self.restaurant = [node.restaurant for node in self.nodes[(self.orders_num + 1): (2 * self.orders_num + 1)]]
         self.dist_cost = dc_i_j  # 网络中各节点之间的距离
         self.travel_time = t_i_j  # 网络中各节点之间的行驶时间
         self.service_time = service_time    # 节点的服务时间
+        self.label_num = 0
 
     def solve(self):
         for node in self.nodes:
@@ -88,7 +81,7 @@ class ESPPTWCPD:
         to_be_extended = deque([self.depot_label()])
         while to_be_extended:
         # while to_be_extended and len(self.nodes[-1].labels) < 200:
-            print(len(self.nodes[-1].labels))
+        #     print(len(self.nodes[-1].labels))
             from_label = to_be_extended.popleft()
             if from_label.dominated:
                 continue
@@ -101,7 +94,9 @@ class ESPPTWCPD:
                         continue
                     to_label.filter_dominated()
                     to_be_extended.append(to_label)
+                    self.label_num += 1
                 to_node.labels.append(to_label)
+        print(self.label_num, len(self.nodes[-1].labels))
 
         return sorted(self.nodes[-1].labels, key=lambda x: x.cost)
 
@@ -123,14 +118,17 @@ class ESPPTWCPD:
         # 下一个节点是顾客节点
         for unfinished_node in from_label.W:
             to_label = self.extended_label(from_label, self.nodes[unfinished_node.num + self.orders_num])
-            to_labels.append(to_label)
+            if not to_label:
+                from_label.U.add(unfinished_node)
+            else:
+                to_labels.append(to_label)
         # 下一个节点是终点
         if not from_label.W and from_label.node.num != 0:
             to_labels.append(self.extended_label(from_label, self.nodes[-1]))
 
         return to_labels
 
-    def extended_label(self, from_label: Label, to_node: Node):
+    def extended_label(self, from_label: Label, to_node):
         # 如果下一个节点是商家节点，计算下一个节点的订单量
         if 1 <= to_node.num <= self.orders_num:
             load = from_label.load + to_node.q_j
@@ -141,19 +139,18 @@ class ESPPTWCPD:
 
         # 计算下一个节点的时间
         from_node = from_label.node
-        if to_node.num > self.orders_num:   # 下一个节点是顾客节点或终点
-            time = from_label.time + self.travel_time[from_node.num, to_node.num] + self.service_time[to_node.num]
-        else:   # 下一个节点是商家节点
-            time = max(from_label.time + self.travel_time[from_node.num, to_node.num] + self.service_time[to_node.num],
-                       self.ready_time[to_node.num - 1])
+        time = max(from_label.time + from_node.service_time + self.travel_time[from_node.num, to_node.num],
+                   to_node.early_time)
+        if time > to_node.late_time:
+            return
 
         # 计算下一个节点的成本
         ride_cost = self.dist_cost[from_node.num, to_node.num]
         delay_cost = 0
         dual_cost = 0
         if self.orders_num < to_node.num <= self.orders_num * 2:   # 下一个节点是顾客节点
-            delay_time = max(0, time - to_node.ready_time - self.delivery_time[to_node.restaurant - 1])
-            delay_cost = delay_time * self.penalty[to_node.restaurant - 1]
+            delay_time = max(0, time - to_node.cost_time)
+            delay_cost = delay_time * to_node.penalty
         if 1 <= from_node.num <= self.orders_num:     # 上一个节点是商家节点
             dual_cost += self.duals[from_node.num - 1]
         cost = from_label.cost + ride_cost + delay_cost - dual_cost

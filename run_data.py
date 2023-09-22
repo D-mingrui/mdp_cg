@@ -9,12 +9,13 @@ class Order:
 
 
 class Restaurant:
-    def __init__(self, num, cor_x, cor_y, time, penalty):
+    def __init__(self, num, cor_x, cor_y, time, penalty, tolerance):
         self.num = num
         self.cor_x = cor_x
         self.cor_y = cor_y
         self.time = time
         self.penalty = penalty
+        self.tolerance = tolerance
 
 
 def read_data(order_path, res_path):
@@ -25,7 +26,7 @@ def read_data(order_path, res_path):
     with open(res_path) as res_file:
         lines = res_file.readlines()
         data = [[int(i) for i in line.split()] for line in lines[1:11]]
-        restaurants = [Restaurant(line[0], line[1], line[2], line[3], line[4]) for line in data if line]
+        restaurants = [Restaurant(line[0], line[1], line[2], line[3], line[4], line[5]) for line in data if line]
     return orders, restaurants
 
 
